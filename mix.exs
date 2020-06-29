@@ -54,6 +54,7 @@ defmodule UeberauthAuth0.Mixfile do
       # Testing:
       {:exvcr, "~> 0.10", only: :test},
       {:excoveralls, "~> 0.11", only: :test},
+      {:mock, "~> 0.3.5", only: :test},
 
       # Type checking
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :test], runtime: false},

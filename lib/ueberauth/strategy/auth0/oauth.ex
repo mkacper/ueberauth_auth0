@@ -69,7 +69,7 @@ defmodule Ueberauth.Strategy.Auth0.OAuth do
   """
   def authorize_url!(params \\ [], opts \\ []) do
     opts
-    |> client
+    |> client()
     |> Client.authorize_url!(params)
   end
 
@@ -77,9 +77,10 @@ defmodule Ueberauth.Strategy.Auth0.OAuth do
     otp_app = Keyword.get(opts, :otp_app)
 
     client_secret =
-      otp_app
-      |> options()
-      |> Keyword.get(:client_secret)
+      opts[:options][:client_options][:client_secret] ||
+        otp_app
+        |> options()
+        |> Keyword.get(:client_secret)
 
     params = Keyword.merge(params, client_secret: client_secret)
     headers = Keyword.get(opts, :headers, [])

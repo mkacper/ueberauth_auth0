@@ -186,4 +186,49 @@ defmodule Ueberauth.Strategy.Auth0Test do
              urls: %{}
            }
   end
+
+  test "client options can be overriden using run_request/3" do
+    conn = conn(:get, "/auth/auth0", scope: "")
+    client_id = :crypto.strong_rand_bytes(12)
+    client_secret = :crypto.strong_rand_bytes(12)
+
+    provider_config =
+      {Ueberauth.Strategy.Auth0,
+       [
+         client_id: client_id,
+         client_secret: client_secret
+       ]}
+
+    conn = Ueberauth.run_request(conn, "auth0", provider_config)
+
+    assert conn
+           |> get_resp_header("location")
+           |> List.first()
+           |> URI.parse()
+           |> Map.get(:query)
+           |> URI.decode_query()
+           |> Map.get("client_id") == client_id
+  end
+
+  test "client options can be overriden using run_callback/3" do
+    use_cassette "auth0-responses", match_requests_on: [:request_body] do
+      conn = conn(:get, "/auth/auth0/callback", code: "code_abc")
+      # the below matches a dedicated Auth0 response that returns
+      # `dynamic_client_opts_token` token
+      client_id = "dynamic_client_id"
+      client_secret = "dynamic_client_secret"
+
+      provider_config =
+        {Ueberauth.Strategy.Auth0,
+         [
+           client_id: client_id,
+           client_secret: client_secret
+         ]}
+
+      conn = Ueberauth.run_callback(conn, "auth0", provider_config)
+      auth = conn.assigns.ueberauth_auth
+
+      assert auth.credentials.token == "dynamic_client_opts_token"
+    end
+  end
 end

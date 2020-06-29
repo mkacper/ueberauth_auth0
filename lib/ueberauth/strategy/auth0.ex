@@ -42,7 +42,7 @@ defmodule Ueberauth.Strategy.Auth0 do
 
     opts =
       [scope: scopes, connection: conn.params["connection"]]
-      |> Enum.filter(fn ({_, v}) -> v  end)
+      |> Enum.filter(fn {_, v} -> v end)
       |> Keyword.put(:redirect_uri, callback_url(conn))
       |> with_optional(:audience, conn)
 
@@ -51,7 +51,7 @@ defmodule Ueberauth.Strategy.Auth0 do
     callback_url =
       apply(module, :authorize_url!, [
         opts,
-        [otp_app: option(conn, :otp_app)]
+        with_optional_client_opts([otp_app: option(conn, :otp_app)], conn)
       ])
 
     redirect!(conn, callback_url)
@@ -68,7 +68,10 @@ defmodule Ueberauth.Strategy.Auth0 do
     client =
       apply(module, :get_token!, [
         [code: code, redirect_uri: redirect_uri],
-        [otp_app: option(conn, :otp_app)]
+        [
+          otp_app: option(conn, :otp_app),
+          options: [client_options: with_optional_client_opts([], conn)]
+        ]
       ])
 
     token = client.token
@@ -164,6 +167,12 @@ defmodule Ueberauth.Strategy.Auth0 do
       last_name: user["family_name"],
       image: user["picture"]
     }
+  end
+
+  defp with_optional_client_opts(opts, conn) do
+    opts
+    |> with_optional(:client_id, conn)
+    |> with_optional(:client_secret, conn)
   end
 
   defp with_optional(opts, key, conn) do
